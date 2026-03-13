@@ -87,6 +87,10 @@ class ShellCommandTool(BaseTool):
             "required": ["command"]
         }
 
+
+
+
+
     def execute(self, command: str, **kwargs) -> str:
 
         """执行命令并返回输出"""
@@ -124,6 +128,11 @@ class ShellCommandTool(BaseTool):
             return "Error: 命令执行超时 (>15秒)"
         except Exception as e:
             return f"Error: 执行异常 - {str(e)}"
+
+
+
+
+
 
     def check_refuse_cmd(self,command):
         cmd_lower = command.lower()
