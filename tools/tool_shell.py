@@ -6,8 +6,10 @@ import json
 import re
 
 class ShellCommandTool(BaseTool):
-    def __init__(self, config_path: str ):
+    def __init__(self):
         self.allowed_write_dirs = []
+
+    def init_working_dir(self,config_path: str):
         self._load_config(config_path)
         print('allowed write dir:')
         for d in self.allowed_write_dirs:

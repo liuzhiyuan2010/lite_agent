@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from colorama import Fore, Style
 import sys
 # 引入工具模块
-from tools import get_tools_definitions, get_tool_by_name
+from tools import get_tools_definitions, get_tool_by_name,init_working_dir
 
 
 class LLMClient:
@@ -16,7 +16,7 @@ class LLMClient:
         self.llm_cfg = self.config['llm']
         self.max_iterations = 15  # 防止工具调用死循环
 
-        self.allowed_dir_cfg = self.config['allowed_write_dirs']
+        init_working_dir(self.config.get('allowed_write_dirs',[]))
 
         # 获取工具定义 (Schema)，LLM 只需要知道这些
         self.tools_definitions = get_tools_definitions()
@@ -35,7 +35,7 @@ class LLMClient:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {
-            "model": "qwen2.5:7b",
+            "model": "Not model",
             "temperature": 0.1,
             "num_predict": 2000
         }
@@ -107,15 +107,13 @@ class LLMClient:
                                 Fore.GREEN + f"  <- 执行结果: {result_output[:100]}{'...' if len(result_output) > 100 else ''}")
                             if result_output.find("Error")>=0:
                                 print ("执行出错")
-                                messages.append({
-                                        "role":"tool",
+                                messages.append({ "role":"tool",
                                         "content":'命令执行错误，请根据下面内容修正后重新生成工具调用\n'+result_output
                                     }
                                 )
                             else:
                                 # 将结果反馈给模型
-                                messages.append({
-                                    "role": "tool",
+                                messages.append({  "role": "tool",
                                     "content": result_output,
                                 })
 
