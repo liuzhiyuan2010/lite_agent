@@ -82,9 +82,9 @@ class LLMClient:
                 message = response.message
                 messages.append(message)  # 记录模型回复
 
-                print(response.message)
+                print(f'llm response : {response.message}')
                 # 情况 A: 模型直接回答
-                if message.content:
+                if message.content and message.tool_calls ==None:
                     final_response = message.content
                     break
                 # 情况 B: 模型请求调用工具
