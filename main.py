@@ -10,6 +10,7 @@ from llm_client import LLMClient
 # 初始化 colorama
 init(autoreset=True)
 
+CONFIG_PATH = "config/conf.json"
 
 def main():
     print(Fore.BLUE + "=== 模块化 Ollama 工具调用系统 ===")
@@ -18,7 +19,7 @@ def main():
 
     # 初始化客户端
     try:
-        client = LLMClient()
+        client = LLMClient(CONFIG_PATH)
     except Exception as e:
         print(Fore.RED + f"启动失败: {e}")
         sys.exit(1)
@@ -54,4 +55,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -8,6 +8,7 @@ import re
 class ShellCommandTool(BaseTool):
     def __init__(self):
         self.allowed_write_dirs = []
+        self.exec_time_out = 60*10
 
     def init_working_dir(self,config_path: str):
         self._load_config(config_path)
@@ -68,7 +69,7 @@ class ShellCommandTool(BaseTool):
             f"在终端执行 Shell 命令。\n"
             f"**重要安全限制**:\n"
             f"1. **写/删除操作** (如 echo >, touch, rm, del, mkdir) **只能**在以下目录进行: [{dirs_str}]\n"
-            f"2. **读操作** (如 cat, dir, ls, ping) 可以在当前目录及其子目录进行，但禁止使用 '..' 跳出。\n"
+            f"2. **读操作** (如 cat, dir, ls, ping) \n"
             f"3. 严禁执行 sudo, kill, format, shutdown 等系统级危险命令。\n"
             f"如果用户请求在非白名单目录进行写/删操作，请直接拒绝并说明原因。"
         )
@@ -107,7 +108,7 @@ class ShellCommandTool(BaseTool):
                 capture_output=True,
                 text=True,
                 shell=True,
-                timeout=15,
+                timeout=self.exec_time_out,
                 encoding='utf-8',
                 # 【关键修改 2】遇到无法解码的字符，忽略它而不是报错崩溃
                 errors='ignore',

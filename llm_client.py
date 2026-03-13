@@ -16,15 +16,14 @@ class LLMClient:
         self.llm_cfg = self.config['llm']
         self.max_iterations = 15  # 防止工具调用死循环
 
-        init_working_dir(self.config.get('allowed_write_dirs',[]))
+        init_working_dir(config_path)
 
         # 获取工具定义 (Schema)，LLM 只需要知道这些
         self.tools_definitions = get_tools_definitions()
 
         print(Fore.CYAN + f"[初始化] 已加载 {len(self.tools_definitions)} 个工具")
 
-        self.memory = f'the os is {sys.platform}' + '\n 当用户输入错误命令时，修改后再生产工具调用' \
-                + '\n 当要修改当前目录下的文件时，先执行git commit 进行提交'
+        self.memory = f'the os is {sys.platform}' + '\n 当用户输入错误命令时，修改后再生成工具调用'
 
     def _load_config(self, path: Optional[str]) -> dict:
         if not path:
@@ -80,16 +79,20 @@ class LLMClient:
                     self._num_output_token += response.eval_count
 
                 message = response.message
-                messages.append(message)  # 记录模型回复
-
+                #messages.append(message)  # 记录模型回复
                 print(f'llm response : {response.message}')
                 # 情况 A: 模型直接回答
-                if message.content and message.tool_calls ==None:
+                if message.content and message.tool_calls is None:
                     final_response = message.content
                     break
                 # 情况 B: 模型请求调用工具
                 if message.tool_calls:
                     print(Fore.YELLOW + f"\n[第{iteration}轮] 模型请求调用工具...")
+
+                    tool_call_message = message
+                    tool_call_message.content = ""  # 清空content字段
+                    # 将清空content后的消息加入上下文
+                    messages.append(tool_call_message)
 
                     for tool_call in message.tool_calls:
                         func_name = tool_call.function.name
