@@ -1,0 +1,1 @@
+#A  naive little agent  using ollama backend

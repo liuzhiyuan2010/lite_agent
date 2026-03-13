@@ -14,6 +14,7 @@ class LLMClient:
         self._num_output_token = 0
         self.config = self._load_config(config_path)
         self.llm_cfg = self.config['llm']
+        self.max_iterations = 15  # 防止工具调用死循环
 
         self.allowed_dir_cfg = self.config['allowed_write_dirs']
 
@@ -22,7 +23,8 @@ class LLMClient:
 
         print(Fore.CYAN + f"[初始化] 已加载 {len(self.tools_definitions)} 个工具")
 
-        self.memory = f'the os is {sys.platform}' + '\n 当用户输入错误命令时，修改后再生产工具调用'
+        self.memory = f'the os is {sys.platform}' + '\n 当用户输入错误命令时，修改后再生产工具调用' \
+                + '\n 当要修改当前目录下的文件时，先执行git commit 进行提交'
 
     def _load_config(self, path: Optional[str]) -> dict:
         if not path:
@@ -52,10 +54,10 @@ class LLMClient:
         messages.append({"role": "user", "content": user_message})
 
         final_response = ""
-        max_iterations = 5  # 防止工具调用死循环
+
         iteration = 0
 
-        while iteration < max_iterations:
+        while iteration < self.max_iterations:
             iteration += 1
 
             try:
