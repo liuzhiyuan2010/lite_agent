@@ -1,35 +1,30 @@
 
 import colorama
-# 初始化 colorama
-colorama.init(autoreset=True)
-
 import sys
 from colorama import init, Fore, Style
-from llm_client import LLMClient
-
+#from llm_client import LLMClient
+from agent import  AgentLoop
 # 初始化 colorama
 init(autoreset=True)
 
 CONFIG_PATH = "config/conf.json"
 
 def main():
-    print(Fore.BLUE + "=== 模块化 Ollama 工具调用系统 ===")
-    print(Fore.WHITE + "架构：Main -> LLMClient -> Tools Module")
-    print(Fore.YELLOW + "输入 'bye' 退出\n")
+    print(Fore.YELLOW + "type 'bye' to break \n")
 
     # 初始化客户端
     try:
-        client = LLMClient(CONFIG_PATH)
+        client = AgentLoop(CONFIG_PATH)
     except Exception as e:
-        print(Fore.RED + f"启动失败: {e}")
+        print(Fore.RED + f"start failed: {e}")
         sys.exit(1)
 
     while True:
         try:
-            user_input = input(Fore.WHITE + "👤 请输入问题: ")
+            user_input = input(Fore.WHITE + "👤 >>>: ")
 
             if user_input.strip().lower() in ['bye', 'exit', 'quit']:
-                print(Fore.BLUE + "再见！")
+                print(Fore.BLUE + "Bye！")
                 break
 
             if not user_input.strip():
@@ -47,10 +42,10 @@ def main():
             print("-" * 40)
 
         except KeyboardInterrupt:
-            print("\n程序中断退出")
+            print("\nabort")
             break
         except Exception as e:
-            print(Fore.RED + f"发生未知错误: {e}")
+            print(Fore.RED + f"error: {e}")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,10 @@
-# A  naive little agent  using ollama backend
+# A  naive  llm-agent  using ollama and deepseek backend
+
+## features
 - only one tool [shell]
-- just tool calls supported
-- todo [add more llm ]
+- This project uses only Python's built-in libraries.
+No third-party dependencies are required.
+
+## todo
+-  [add memory and skills]
+- 

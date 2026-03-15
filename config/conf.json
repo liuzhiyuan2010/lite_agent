@@ -1,11 +1,23 @@
 {
 "llm":{
+  "model_type": "ollama"
+},
+
+"ollama":{
   "model": "qwen3.5:397b-cloud",
   "temperature": 0.1,
   "num_predict": 8192,
   "think":false,
   "base_url": "http://localhost:11434"
 },
+
+  "deepseek":{
+  "model": "deepseek-chat",
+  "temperature": 0.1,
+  "num_predict": 8192,
+  "think":false
+},
+
 
   "allowed_write_dirs": [
     "./"
