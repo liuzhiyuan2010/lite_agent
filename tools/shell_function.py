@@ -16,6 +16,10 @@ ALLOWED_WRITE_DIRS = [os.path.normpath(os.getcwd())]
 # 命令执行超时时间（秒）
 EXEC_TIMEOUT = 600
 
+
+# --- 配置区 ---
+
+
 # ========== 核心 shell_cmd 函数 ==========
 def run_shell_function(command_string: str, cwd: Optional[str] = None, allowed_dirs: Optional[List[str]] = None) -> str:
     """
@@ -120,7 +124,7 @@ def get_shell_tool_definition() -> Dict:
         "function": {
             "name": "run_shell_function",
             "description": f"""
-                执行Shell命令的工具，必须传入 command_string 参数（要执行的Shell命令字符串）
+                执行Shell(gitbash)命令的工具，必须传入 command_string 参数（要执行的Shell命令字符串）
             """.replace("\n", " ").strip(),
             "parameters": {
                 "type": "object",
@@ -128,11 +132,7 @@ def get_shell_tool_definition() -> Dict:
                 "properties": {
                     "command_string": {
                         "type": "string",
-                        "description": "要执行的Shell命令（如ls -l、pwd等）"
-                    },
-                    "cwd": {
-                        "type": "string",
-                        "description": "命令执行的工作目录（默认：当前目录）"
+                        "description": "要执行的Shell（如ls -l、pwd等）"
                     }
                 }
 

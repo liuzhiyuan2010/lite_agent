@@ -1,6 +1,6 @@
 
 from typing import Optional, Callable
-from .shell_function import run_shell_function,get_shell_tool_definition
+from .safe_shell_function import run_shell_function,get_shell_tool_definition
 
 
 AVAILABLE_TOOLS: dict[str, Callable] = {

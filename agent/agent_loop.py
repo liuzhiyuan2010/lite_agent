@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from colorama import Fore, Style
 from tools import  get_shell_tool_definition,get_tool_by_name
 from llmer import LLMer
+from .agent_memory import AgentMemory
 
 class AgentLoop:
     def __init__(self, config_path: Optional[str] = None):
@@ -22,7 +23,9 @@ class AgentLoop:
 
         print(Fore.CYAN + f"[初始化] 已加载 {len(self.tools_definitions)} 个工具")
 
-        self.memory = f' 你只能使用类linux的shell命令，应返回linux风格(E/proj/的路径)，而不是E:\\proj\\。当输入错误命令时，修改后再生成工具调用'
+        self.long_term_memory_manager = AgentMemory()
+
+        self.memory = f'{self.long_term_memory_manager.get_recent_context(10)}\n 你只能使用类linux的shell命令，应返回linux风格(E/proj/的路径)，而不是E:\\proj\\。当输入错误命令时，修改后再生成工具调用'
         self.is_ollama_backend = False
         if self.llm_cfg.get('model_type') == 'ollama':
             print(f'ollama backend!!!')
@@ -30,7 +33,7 @@ class AgentLoop:
             self.llm_backend = LLMer(llm_type="ollama",
                     model=self.llm_cfg.get('model',"qwen3.5:397b-cloud"),
                     temperature=self.llm_cfg.get('temperature',0.6),
-                    thinking=False)
+                    thinking=self.llm_cfg.get('think'))
 
         elif self.llm_cfg.get('model_type') == 'deepseek':
             print(f'deepseek backend!!!')
@@ -38,7 +41,7 @@ class AgentLoop:
                 api_key=os.getenv('DEEPSEEK_API_KEY'),  # 替换为实际API Key
                 model="deepseek-chat",
                 temperature=self.llm_cfg.get("temperature", 0.1),
-                thinking=False)
+                thinking=self.llm_cfg.get('think'))
         else:
             print(f'ERROR   {self.llm_cfg.get('model')} not supported.')
             self.llm_backend = None
@@ -83,6 +86,8 @@ class AgentLoop:
 
         messages.append({"role": "user", "content": user_message})
 
+        self.long_term_memory_manager.add(role = "user", content=user_message)
+
         final_response = ""
 
         iteration = 0
@@ -97,6 +102,8 @@ class AgentLoop:
                     stream=False,
                     #thinking = self.llm_cfg .get('think',True)
                 )
+
+                self.show_response(response)
 
                 # 统计 Token
                 if hasattr(response, 'prompt_eval_count'):
@@ -125,13 +132,12 @@ class AgentLoop:
                                 "type": "function",
                                 "function": {
                                     "name": tc.function_name,
-                                    "arguments": tc.parameters  if self.is_ollama_backend else json.dumps(tc.parameters) #json.dumps(tc.parameters)  # ✅ deepseek 这里参数需序列化为 JSON 字符串
+                                    "arguments": tc.parameters  if self.is_ollama_backend else json.dumps(tc.parameters) # ✅ deepseek 这里参数需序列化为 JSON 字符串
                                 }
-                            }
-                            for tc in message.tool_calls
+                            }    for tc in message.tool_calls
                         ]
                     }
-                    messages.append(assistant_message)
+                    messages.append(assistant_message)#存储工具调用及其参数
 
                     for tool_call in message.tool_calls:
                         func_name = tool_call.function_name
@@ -145,8 +151,7 @@ class AgentLoop:
                             tool_instance = get_tool_by_name(func_name)
                             result_output = tool_instance(func_args)
 
-                            print(
-                                Fore.GREEN + f"  <- 执行结果: {result_output[:100]}{'...' if len(result_output) > 100 else ''}")
+                            print(Fore.GREEN + f"  <- 执行结果: {result_output[:100]}{'...' if len(result_output) > 100 else ''}")
                             if result_output.find("Error")>=0:
                                 print ("执行出错")
                                 messages.append({ "role":"tool",
@@ -173,8 +178,10 @@ class AgentLoop:
 
             except Exception as e:
                 return f"LLM 服务错误: {str(e)}"
-
+        self.long_term_memory_manager.add(role="assistant", content=final_response)
         return final_response
+
+
 
     @property
     def stats(self):
@@ -183,3 +190,11 @@ class AgentLoop:
             "output_tokens": self._num_output_token,
             "total_tokens": self._num_input_token + self._num_output_token
         }
+
+    @staticmethod
+    def show_response(response):
+        message = response.message
+        print(f'role: {message.role}')
+        print(f'thinking: {message.thinking}')
+        print(f'content: {message.content}')
+        print(f'tool_calls: {message.tool_calls}')

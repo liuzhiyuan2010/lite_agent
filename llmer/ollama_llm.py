@@ -79,7 +79,7 @@ class OllamaLLM(BaseLLM):
             url=f"{self.api_url}/chat",
             json=request_body,
             stream=stream,
-            timeout=kwargs.get("timeout", 60)
+            timeout=kwargs.get("timeout", 160)
         )
         response.raise_for_status()
 
