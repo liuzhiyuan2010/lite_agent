@@ -124,7 +124,7 @@ def get_shell_tool_definition() -> Dict:
         "function": {
             "name": "run_shell_function",
             "description": f"""
-                执行Shell(gitbash)命令的工具，必须传入 command_string 参数（要执行的Shell命令字符串）
+                执行Shell命令的工具，必须传入 command_string 参数（要执行的Shell命令字符串）
             """.replace("\n", " ").strip(),
             "parameters": {
                 "type": "object",

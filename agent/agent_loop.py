@@ -1,11 +1,12 @@
-
 import json
 import os
 from typing import List, Dict, Optional
 from colorama import Fore, Style
+
 from tools import  get_shell_tool_definition,get_tool_by_name
 from llmer import LLMer
-from .agent_memory import AgentMemory
+import uuid
+from rag import ChromaRAG,parse_qa_pair
 
 class AgentLoop:
     def __init__(self, config_path: Optional[str] = None):
@@ -14,8 +15,6 @@ class AgentLoop:
         self.llm_cfg = self._load_config(config_path)
 
         self.max_iterations = 15  # 防止工具调用死循环
-
-        #init_working_dir(config_path)
         self.ALLOWED_WRITE_DIR = self.llm_cfg.get('ALLOWED_WRITE_DIR')
 
         # 获取工具定义 (Schema)，LLM 只需要知道这些
@@ -23,16 +22,15 @@ class AgentLoop:
 
         print(Fore.CYAN + f"[初始化] 已加载 {len(self.tools_definitions)} 个工具")
 
-        self.long_term_memory_manager = AgentMemory()
 
-        self.memory = f'{self.long_term_memory_manager.get_recent_context(10)}\n 你只能使用类linux的shell命令，应返回linux风格(E/proj/的路径)，而不是E:\\proj\\。当输入错误命令时，修改后再生成工具调用'
+
         self.is_ollama_backend = False
         if self.llm_cfg.get('model_type') == 'ollama':
             print(f'ollama backend!!!')
             self.is_ollama_backend = True
             self.llm_backend = LLMer(llm_type="ollama",
-                    model=self.llm_cfg.get('model',"qwen3.5:397b-cloud"),
-                    temperature=self.llm_cfg.get('temperature',0.6),
+                    model=self.llm_cfg.get('model',"qwen3.5:4b"),
+                    temperature=self.llm_cfg.get('temperature',0.7),
                     thinking=self.llm_cfg.get('think'))
 
         elif self.llm_cfg.get('model_type') == 'deepseek':
@@ -45,6 +43,16 @@ class AgentLoop:
         else:
             print(f'ERROR   {self.llm_cfg.get('model')} not supported.')
             self.llm_backend = None
+
+        self._memory_manager = ChromaRAG(db_path='./agent_memory')
+
+        self.pre_memory=(f'\n当输入错误命令时，修改后再生成工具调用\n'
+                            f'\n除非用户要求，回复尽量小像面对面说话\n'
+                            f'遇到路径如下处理：将 E:\\PROJ\\ 转为 E:/PROJ/ '
+                             )
+
+        self.chat_history = []
+
 
     def _load_config(self, path: Optional[str]) -> dict:
         if not path:
@@ -74,19 +82,25 @@ class AgentLoop:
         }
 
     def chat(self, user_message: str, system_prompt: str = "") -> str:
-        """
-        处理包含工具调用的完整对话流程
-        """
         messages = []
-
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        if self.memory :
-            messages.append({"role": "system", "content": self.memory})
+        if self.pre_memory :
+            messages.append({"role": "system", "content": self.pre_memory})
+
+        rag_search_res = self._memory_manager.search(user_message,top_k=5,min_similarity=0.5)
+        if rag_search_res:
+            for rag_search_one in rag_search_res:
+                pair_qa = parse_qa_pair(rag_search_one['content'])
+                print(f'memories \npair_qa : {pair_qa}')
+                for rag_rs in pair_qa:
+                    messages.append(rag_rs)
+
+        for chat_msg in self.chat_history:
+            messages.append(chat_msg)
 
         messages.append({"role": "user", "content": user_message})
 
-        self.long_term_memory_manager.add(role = "user", content=user_message)
 
         final_response = ""
 
@@ -100,7 +114,9 @@ class AgentLoop:
                     messages=messages,
                     tools=self.tools_definitions,  # 注入工具定义
                     stream=False,
-                    #thinking = self.llm_cfg .get('think',True)
+                    thinking=self.llm_cfg.get('think'),
+                    temperature=self.llm_cfg.get('temperature', 0.1),
+
                 )
 
                 self.show_response(response)
@@ -112,20 +128,17 @@ class AgentLoop:
                     self._num_output_token += response.eval_count
 
                 message = response.message
-                #messages.append(message)  # 记录模型回复
-                #print(f'llm response : {response.message}')
-                # 情况 A: 模型直接回答
                 if message.content and not message.tool_calls:
                     final_response = message.content
                     break
-                # 情况 B: 模型请求调用工具
+
                 if message.tool_calls:
                     print(Fore.YELLOW + f"\n[第{iteration}轮] 模型请求调用工具...")
 
                     # ✅ 修复：将 Message 对象转为 dict 格式
                     assistant_message = {
                         "role": "assistant",
-                        "content": "",  # 有 tool_calls 时 content 通常为空
+                        'content': '',
                         "tool_calls": [
                             {
                                 "id": tc.id,
@@ -178,7 +191,11 @@ class AgentLoop:
 
             except Exception as e:
                 return f"LLM 服务错误: {str(e)}"
-        self.long_term_memory_manager.add(role="assistant", content=final_response)
+
+        self._memory_manager.add_documents([ f'user: {user_message}\nassistant: {final_response}' ],similarity_threshold=0.86)
+        self.chat_history.append({'role': 'user', 'content': user_message})
+        self.chat_history.append({'role': 'assistant', 'content': final_response})
+
         return final_response
 
 

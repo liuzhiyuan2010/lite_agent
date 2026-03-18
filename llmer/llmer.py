@@ -45,6 +45,8 @@ class LLMer:
         self,
         messages: List[Dict[str, str]],
         tools: Optional[List[Dict[str, Any]]] = None,
+        think :bool = False,
+        temperature:float   =0.7,
         stream: bool = False,** kwargs
     ) -> ChatResponse:
         """
@@ -64,5 +66,7 @@ class LLMer:
         return self.llm.chat(
             messages=messages,
             tools=tools,
+            think=think,
+            temperature = temperature,
             stream=stream,** kwargs
         )

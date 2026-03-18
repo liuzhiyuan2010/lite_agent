@@ -9,8 +9,8 @@ from typing import Optional, List, Dict, Set, Tuple
 
 # 1. 允许执行的命令白名单 (小写)
 ALLOWED_COMMANDS: Set[str] = {
-    'ls', 'find', 'pwd', 'cat', 'head', 'tail',
-    'grep', 'awk', 'sed', 'wc', 'echo', 'touch',
+     'dir', 'cat', 'head', 'tail',
+     'echo', 'findstr','jq'
     'curl', 'wget', 'ping','python'
 }
 
@@ -117,11 +117,14 @@ def run_shell_function(
     # 注意：我们执行的是原始的 cmd_raw，以保持 bash 的管道和逻辑功能
     try:
         if sys.platform == "win32":
-            bash_path = r"E:\Program Files (x86)\Git\bin\bash.exe"
+            shell_cmd_list =  cmd_raw
+            '''
+            bash_path = r"E:\\Program Files (x86)\\Git\\bin\\bash.exe"
             if os.path.exists(bash_path):
                 shell_cmd_list = [bash_path, "-c", cmd_raw]
             else:
                 return "❌ 错误：Windows 环境下未找到 Git Bash。"
+            '''
         else:
             shell_cmd_list = ["/bin/bash", "-c", cmd_raw]
 
@@ -230,25 +233,14 @@ def _extract_paths_from_command(command: str, cwd: str) -> List[str]:
 # ========== LLM Tool Definition ==========
 
 def get_shell_tool_definition() -> Dict:
-    allowed_cmds_str = ", ".join(sorted(ALLOWED_COMMANDS))
+    #allowed_cmds_str = ", ".join(sorted(ALLOWED_COMMANDS))
     return {
         "type": "function",
         "function": {
             "name": "run_shell_function",
             "description": f"""
-                在安全沙箱中执行 Shell 命令。支持命令链 (|, ;, &&, ||)。
-
-                **安全规则**:
-                1. **全链路白名单**: 命令链中的**每一个**子命令都必须在允许列表中: {allowed_cmds_str}。
-                   - 示例: "ls | grep txt" (合法，如果 ls 和 grep 都在白名单)
-                   - 示例: "ls | rm file" (非法，rm 不在白名单，整个命令被拒)
-                2. **路径隔离**: 所有子命令涉及的文件路径必须在 `allowed_dirs` 内。
-                3. **禁止项**: 禁止 sudo, su, 以及任何不在白名单的命令。
-
                 **参数**:
                 - command_string: 完整的命令字符串。
-                - cwd: 工作目录。
-                - allowed_dirs: 允许访问的目录列表 (绝对路径)。
             """.replace("\n", " ").strip(),
             "parameters": {
                 "type": "object",
@@ -256,16 +248,7 @@ def get_shell_tool_definition() -> Dict:
                 "properties": {
                     "command_string": {
                         "type": "string",
-                        "description": "Shell 命令，支持管道和逻辑组合 (如: 'cat log.txt | grep error')"
-                    },
-                    "cwd": {
-                        "type": "string",
-                        "description": "(可选) 工作目录"
-                    },
-                    "allowed_dirs": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "(可选) 允许访问的目录列表"
+                        "description": "Shell 命令(如: 'cat log.txt | grep error')"
                     }
                 }
             }

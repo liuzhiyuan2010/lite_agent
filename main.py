@@ -1,17 +1,21 @@
 
-import colorama
 import sys
 from colorama import init, Fore, Style
-#from llm_client import LLMClient
 from agent import  AgentLoop
+
+#from  audio import  TTS_KOKORO
 # 初始化 colorama
 init(autoreset=True)
 
 CONFIG_PATH = "config/conf.json"
 
-def main():
-    print(Fore.YELLOW + "type 'bye' to break \n")
 
+#     你叫小q  我现在想听音乐 打开E:\Program Files\NetEase\CloudMusic\cloudmusic.exe
+
+
+if __name__ == "__main__":
+    print(Fore.YELLOW + "type 'bye' to break \n")
+    #tts = TTS_KOKORO()
     # 初始化客户端
     try:
         client = AgentLoop(CONFIG_PATH)
@@ -32,7 +36,7 @@ def main():
 
             # 调用解耦后的聊天方法
             response = client.chat(user_input)
-
+            #tts.tts_run(response)
             print(Fore.MAGENTA + f"\n🤖 AI: {response}")
 
             # 显示统计
@@ -48,5 +52,4 @@ def main():
             print(Fore.RED + f"error: {e}")
 
 
-if __name__ == "__main__":
-    main()
+

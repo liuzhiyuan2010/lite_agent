@@ -10,7 +10,7 @@ class OllamaLLM(BaseLLM):
             model: str = "llama3.2",
             temperature: float = 0.7,
             thinking: Union[bool, str] = False,
-            keep_alive: str = "5m",
+            keep_alive: str = "15m",
             logprobs: bool = False,
             top_logprobs: int = 0, **kwargs
     ):
@@ -40,6 +40,8 @@ class OllamaLLM(BaseLLM):
             messages: List[Dict[str, str]],
             tools: Optional[List[Dict[str, Any]]] = None,
             stream: bool = False,
+            think :bool = False,
+            temperature:float=0.7,
             format: Optional[Union[str, Dict]] = None, **kwargs
     ) -> ChatResponse:
         """
@@ -60,9 +62,9 @@ class OllamaLLM(BaseLLM):
             "messages": messages,
             "stream": stream,
             "options": {
-                "temperature": self.temperature, **self.kwargs.get("options", {}), **kwargs.get("options", {})
+                "temperature": temperature, **self.kwargs.get("options", {}), **kwargs.get("options", {})
             },
-            "think": self.thinking,
+            "think": think,
             "keep_alive": self.keep_alive,
             "logprobs": self.logprobs,
             "top_logprobs": self.top_logprobs

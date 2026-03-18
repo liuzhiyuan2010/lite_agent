@@ -2,9 +2,13 @@
 
 ## features
 - only one tool [shell]
-- This project uses only Python's built-in libraries.
-No third-party dependencies are required.
+- memory system using chromadb.
+
+## requirements
+```commandline
+pip install requests chromadb sentence-transformers
+```
 
 ## todo
--  [add memory and skills]
+-  [ and skills]
 - 

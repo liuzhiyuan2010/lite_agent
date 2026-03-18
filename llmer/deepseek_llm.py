@@ -41,6 +41,8 @@ class DeepseekLLM(BaseLLM):
             self,
             messages: List[Dict[str, str]],
             tools: Optional[List[Dict[str, Any]]] = None,
+            think:  bool = False,
+            temperature:    float=0.7,
             stream: bool = False, **kwargs
     ) -> ChatResponse:
         """
@@ -58,7 +60,7 @@ class DeepseekLLM(BaseLLM):
         request_body = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.temperature,
+            "temperature": temperature,
             "stream": stream,
             "tools": tools if tools else [],
             "tool_choice": kwargs.get("tool_choice", "auto"), **self.kwargs, **kwargs
